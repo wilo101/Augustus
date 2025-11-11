@@ -112,10 +112,10 @@ export default function Index() {
             </div>
           </header>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
             <button
               onClick={() => setMapFocusLayout((v) => !v)}
-              className="rounded border border-red-900/40 bg-black/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-red-100 transition hover:bg-red-900/30"
+              className="rounded border border-red-900/40 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-red-100 transition hover:bg-red-900/30 sm:text-xs sm:py-1.5"
             >
               {mapFocusLayout ? "Default Layout" : "Map Focus Layout"}
             </button>
@@ -133,31 +133,30 @@ export default function Index() {
               >
                 <motion.div
                   layout
-                  className="grid gap-4 md:gap-6 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] items-stretch"
+                  className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] items-stretch"
                   transition={spring}
                 >
                   <motion.div layout className="h-full" transition={spring}>
-                    <div data-tour="cam" className="h-full">
+                    <div data-tour="cam" className="h-full min-h-[220px] sm:min-h-[320px]">
                       <LiveCamera className="h-full" />
                     </div>
                   </motion.div>
-
                   <motion.div
                     layout
-                    className="grid grid-cols-1 gap-4 md:gap-5 auto-rows-fr sm:grid-cols-2 md:grid-rows-2 h-full"
+                    className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-rows-2"
                     transition={spring}
                   >
-                    <motion.div layout data-tour="battery" className="h-full" transition={spring}>
-                      <BatteryGauge value={battery} className="h-full" />
+                    <motion.div layout data-tour="battery" transition={spring}>
+                      <BatteryGauge value={battery} className="h-full min-h-[150px] sm:min-h-[180px]" />
                     </motion.div>
-                    <motion.div layout data-tour="temp" className="h-full" transition={spring}>
-                      <TemperatureCard value={temp} className="h-full" />
+                    <motion.div layout data-tour="temp" transition={spring}>
+                      <TemperatureCard value={temp} className="h-full min-h-[150px] sm:min-h-[180px]" />
                     </motion.div>
-                    <motion.div layout data-tour="water" className="h-full" transition={spring}>
-                      <WaterGauge value={water} className="h-full" />
+                    <motion.div layout data-tour="water" transition={spring}>
+                      <WaterGauge value={water} className="h-full min-h-[150px] sm:min-h-[180px]" />
                     </motion.div>
-                    <motion.div layout data-tour="pressure" className="h-full" transition={spring}>
-                      <PumpPressure value={pressure} className="h-full" />
+                    <motion.div layout data-tour="pressure" transition={spring}>
+                      <PumpPressure value={pressure} className="h-full min-h-[150px] sm:min-h-[180px]" />
                     </motion.div>
                   </motion.div>
                 </motion.div>

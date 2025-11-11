@@ -23,6 +23,12 @@ export default function GuidedTour({ steps, open, onClose }: Props) {
   const [tooltipSize, setTooltipSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [navSize, setNavSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const maskId = useId();
+  const supportsMask = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return typeof window.CSS !== "undefined" && typeof window.CSS.supports === "function"
+      ? window.CSS.supports("mask-image", "url(#test)")
+      : false;
+  }, []);
 
   const currentStep = steps[index];
 
@@ -270,13 +276,15 @@ export default function GuidedTour({ steps, open, onClose }: Props) {
       </svg>
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "rgba(6, 6, 6, 0.72)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          mask: `url(#${maskId})`,
-          WebkitMask: `url(#${maskId})`,
-        }}
+        style={
+          highlight && supportsMask
+            ? {
+                background: "rgba(6, 6, 6, 0.72)",
+                mask: `url(#${maskId})`,
+                WebkitMask: `url(#${maskId})`,
+              }
+            : { background: "rgba(6, 6, 6, 0.6)" }
+        }
       />
 
       {!stepNotVisible && (
