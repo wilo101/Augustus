@@ -1,5 +1,5 @@
 {
-  "name": "fusion-starter",
+  "name": "augustus",
   "private": true,
   "type": "module",
   "pkg": {
@@ -10,6 +10,7 @@
       "dist/server/**/*.js"
     ]
   },
+  "displayName": "Augustus Command Console",
   "scripts": {
   "dev": "vite",
   "build": "npm run build:client && npm run build:server",

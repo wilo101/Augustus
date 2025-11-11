@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import IpCameraFeed from "./IpCameraFeed";
 import LaptopWebcam from "./LaptopWebcam";
@@ -6,9 +6,19 @@ import LaptopWebcam from "./LaptopWebcam";
 type Props = { className?: string };
 
 export default function LiveCamera({ className }: Props) {
-  const NETWORK_CAMERA_URL = "http://192.168.69.102:8080/?action=stream";
+  const DEFAULT_NETWORK_URL = "http://192.168.69.102:8080/?action=stream";
   const FIRE_DETECT_URL = "http://127.0.0.1:5001/video";
   const [mode, setMode] = useState<"ip" | "webcam" | "detect">("ip");
+  const [networkUrl, setNetworkUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_NETWORK_URL;
+    return window.localStorage.getItem("augustus-network-url") ?? DEFAULT_NETWORK_URL;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("augustus-network-url", networkUrl.trim());
+  }, [networkUrl]);
+
   return (
     <div
       className={cn(
@@ -53,8 +63,27 @@ export default function LiveCamera({ className }: Props) {
           </button>
         </div>
       </div>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="text-[11px] uppercase tracking-[0.32em] text-red-200/70 sm:w-40">Network URL</label>
+        <div className="flex w-full gap-2">
+          <input
+            value={networkUrl}
+            onChange={(event) => setNetworkUrl(event.target.value)}
+            spellCheck={false}
+            className="min-w-0 flex-1 rounded-lg border border-red-900/40 bg-black/40 px-3 py-2 text-[11px] uppercase tracking-[0.25em] text-red-100 outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
+            placeholder="http://192.168.x.x:8080/?action=stream"
+          />
+          <button
+            type="button"
+            onClick={() => setNetworkUrl(DEFAULT_NETWORK_URL)}
+            className="rounded-lg border border-red-900/40 bg-black/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-red-100 transition hover:bg-red-900/30"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
       {mode === "ip" ? (
-        <IpCameraFeed url={NETWORK_CAMERA_URL} title="Robot IP Camera" />
+        <IpCameraFeed url={networkUrl || DEFAULT_NETWORK_URL} title="Robot IP Camera" />
       ) : mode === "webcam" ? (
         <LaptopWebcam title="Laptop Camera" />
       ) : (

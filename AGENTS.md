@@ -1,4 +1,4 @@
-# Fusion Starter
+# Augustus Command Console
 
 A production-ready full-stack React application template with integrated Express server, featuring React Router 6 SPA mode, TypeScript, Vitest, Zod and modern tooling.
 
