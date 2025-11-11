@@ -268,17 +268,6 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => setCenter(pos)}
-                className="rounded border border-red-900/40 bg-black/60 px-3 py-1.5 uppercase tracking-[0.25em] text-red-100 transition hover:bg-red-900/30"
-              >
-                Center
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Focus the map on the last telemetry fix</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
                 onClick={() => onFollowChange(!follow)}
                 className={`rounded border px-3 py-1.5 uppercase tracking-[0.25em] transition ${
                   follow ? "border-red-500/70 bg-red-700/30 text-red-100" : "border-red-900/40 bg-black/60 text-red-100"

@@ -1,5 +1,4 @@
 import { ReactNode, Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
-import ThemeToggle from "./ThemeToggle";
 import { Link } from "react-router-dom";
 import SplashScreen from "./SplashScreen";
 import LayoutContext from "./firebot/LayoutContext";
@@ -110,7 +109,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             >
               {tourOpen ? "Close Tour" : "Launch Tour"}
             </button>
-            <ThemeToggle />
           </div>
         </div>
       </nav>

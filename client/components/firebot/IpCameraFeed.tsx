@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, CircleDot, Info, Maximize2, Square } from "lucide-react";
+import { Camera, CircleDot, Info, Maximize2, Pause, Play, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-type CameraStatus = "loading" | "online" | "error";
+type CameraStatus = "loading" | "online" | "error" | "paused";
 
 type Props = {
   url: string;
@@ -35,12 +35,14 @@ export default function IpCameraFeed({
   const [recording, setRecording] = useState<boolean>(false);
   const [actionInfo, setActionInfo] = useState<string>("");
   const [actionError, setActionError] = useState<string>("");
+  const [paused, setPaused] = useState(false);
 
   const effectiveSrc = useMemo(() => {
+    if (paused) return "";
     if (reloadToken === 0) return url;
     const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}reload=${reloadToken}`;
-  }, [url, reloadToken]);
+  }, [url, reloadToken, paused]);
 
   const clearTimeoutRef = (ref: React.MutableRefObject<number | null>) => {
     if (ref.current) {
@@ -191,6 +193,8 @@ export default function IpCameraFeed({
   };
 
   const handleReload = () => {
+    setPaused(false);
+    setStatus("loading");
     setReloadToken((token) => token + 1);
   };
 
@@ -286,10 +290,22 @@ export default function IpCameraFeed({
   );
 
   const statusLabel =
-    status === "online" ? "Live" : status === "loading" ? "Connecting…" : "Offline";
+    status === "online"
+      ? "Live"
+      : status === "loading"
+        ? "Connecting…"
+        : status === "paused"
+          ? "Paused"
+          : "Offline";
 
   const statusTone =
-    status === "online" ? "text-green-400" : status === "loading" ? "text-yellow-300" : "text-red-300";
+    status === "online"
+      ? "text-green-400"
+      : status === "loading"
+        ? "text-yellow-300"
+        : status === "paused"
+          ? "text-amber-300"
+          : "text-red-300";
 
   const handleFullscreen = useCallback(() => {
     const node = containerRef.current;
@@ -368,6 +384,34 @@ export default function IpCameraFeed({
             </TooltipTrigger>
             <TooltipContent>Download current frame as PNG</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="inline-flex items-center gap-1.5 rounded bg-black/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-red-100 transition hover:bg-red-900/40"
+                onClick={() => {
+                  if (!paused) {
+                    clearTimeoutRef(timeoutRef);
+                    setPaused(true);
+                    setStatus("paused");
+                    if (imgRef.current) {
+                      imgRef.current.src = "";
+                    }
+                  } else {
+                    setPaused(false);
+                    setStatus("loading");
+                    setReloadToken((token) => token + 1);
+                  }
+                }}
+                type="button"
+              >
+                {paused ? <Play size={14} /> : <Pause size={14} />}
+                {paused ? "Resume" : "Stop"}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {paused ? "Reconnect to the camera stream" : "Pause the camera stream"}
+            </TooltipContent>
+          </Tooltip>
           {recordButton}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -398,7 +442,23 @@ export default function IpCameraFeed({
           alt={title}
           onLoad={handleLoad}
           onError={handleError}
+          style={paused ? { opacity: 0.1 } : undefined}
         />
+        {paused && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 px-4 text-center text-xs text-red-100">
+            <span>Stream paused.</span>
+            <button
+              className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground"
+              onClick={() => {
+                setPaused(false);
+                setStatus("loading");
+                setReloadToken((token) => token + 1);
+              }}
+            >
+              Resume
+            </button>
+          </div>
+        )}
         <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-red-900/60 bg-black/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-red-200/90">
           <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_rgba(239,68,68,0.8)]" />
           {status === "online" ? "LIVE · Network Camera" : status === "loading" ? "Connecting…" : "Offline"}
