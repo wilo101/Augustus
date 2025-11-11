@@ -14,13 +14,16 @@ import PhoneGPS from "./pages/PhoneGPS";
 
 const queryClient = new QueryClient();
 
+// اجعل الـ basename ديناميكيًا من Vite BASE_URL (بيكون "/Augustus/" في الإنتاج)
+const BASENAME = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, ""); // يحذف الـ slash الأخير
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <ErrorBoundary>
-      <BrowserRouter basename="/zenith-oasis-webcam-enabled">
+        <BrowserRouter basename={BASENAME}>
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
