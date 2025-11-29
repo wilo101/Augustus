@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 type Props = { follow: boolean; onFollowChange: (v: boolean) => void; heightClass?: string };
 
 export default function MapPanel({ follow, onFollowChange, heightClass }: Props) {
+  const DEFAULT_GPS_URL = "/api/gps/stream";
+
   // Fix default marker icons for bundlers
   useMemo(() => {
     L.Icon.Default.mergeOptions({
@@ -34,9 +36,18 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
   const [usePhoneGps, setUsePhoneGps] = useState(false);
   const [localGpsEnabled, setLocalGpsEnabled] = useState(true);
   const sseRef = useRef<EventSource | null>(null);
+  const [gpsNetworkUrl, setGpsNetworkUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_GPS_URL;
+    return window.localStorage.getItem("augustus-gps-url") ?? DEFAULT_GPS_URL;
+  });
   const [address, setAddress] = useState<string>("");
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const revTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("augustus-gps-url", gpsNetworkUrl.trim() || DEFAULT_GPS_URL);
+  }, [gpsNetworkUrl, DEFAULT_GPS_URL]);
 
   const robotIcon = useMemo(
     () =>
@@ -130,7 +141,8 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
       }
       return;
     }
-    const es = new EventSource("/api/gps/stream");
+    const url = gpsNetworkUrl.trim() || DEFAULT_GPS_URL;
+    const es = new EventSource(url);
     sseRef.current = es;
     es.onmessage = (e) => {
       try {
@@ -152,7 +164,7 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
       // keep UI indicating remote disabled on error
     };
     return () => es.close();
-  }, [usePhoneGps, follow]);
+  }, [usePhoneGps, follow, gpsNetworkUrl, DEFAULT_GPS_URL]);
 
   async function requestPreciseFix() {
     if (!("geolocation" in navigator) || !localGpsEnabled) return;
@@ -297,6 +309,29 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
               Boost Fix
             </button>
           )}
+        </div>
+      </div>
+      <div className="border-b border-red-900/40 px-4 pb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="text-[10px] uppercase tracking-[0.32em] text-red-200/70 sm:w-40">
+            GPS Network URL
+          </label>
+          <div className="flex w-full gap-2">
+            <input
+              value={gpsNetworkUrl}
+              onChange={(event) => setGpsNetworkUrl(event.target.value)}
+              spellCheck={false}
+              className="min-w-0 flex-1 rounded-lg border border-red-900/40 bg-black/40 px-3 py-2 text-[10px] uppercase tracking-[0.25em] text-red-100 outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              placeholder="http://192.168.x.x:3000/api/gps/stream"
+            />
+            <button
+              type="button"
+              onClick={() => setGpsNetworkUrl(DEFAULT_GPS_URL)}
+              className="rounded-lg border border-red-900/40 bg-black/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-red-100 transition hover:bg-red-900/30"
+            >
+              Reset
+            </button>
+          </div>
         </div>
       </div>
       <div className="p-3">
