@@ -1,96 +1,49 @@
-/** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /**
-   * Tailwind CSS theme
-   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
-   * A different format will require also updating the theme in tailwind.config.ts.
-  */
   :root {
-    /* Light theme - Roman inspired */
-    --background: 0 0% 98%;
-    --foreground: 0 0% 10%;
+    /* Precision Grid Theme - Enterprise Dark */
+    --background: 240 10% 3.9%;
+    /* Zinc 950 */
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 0 85% 45%; /* Imperial Red */
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
 
-    --secondary: 0 0% 92%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 92%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --accent: 0 70% 55%;
+    --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 70% 45%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 0 85% 45%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 15%;
-    --sidebar-primary: 0 85% 45%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 92%;
-    --sidebar-accent-foreground: 0 0% 15%;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 0 85% 45%;
-  }
-
-  .dark {
-    /* Dark theme - Roman black with imperial red */
-    --background: 0 0% 3%;
-    --foreground: 0 0% 96%;
-
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 96%;
-
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 96%;
-
-    --primary: 0 84% 60%; /* Vibrant Imperial Red */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 9%;
-    --secondary-foreground: 0 0% 96%;
-
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 70%;
-
-    --accent: 0 70% 40%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 70% 40%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 35% 15%;
-    --input: 0 35% 15%;
-    --ring: 0 84% 55%;
-
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 0 84% 60%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 50% 12%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 30% 12%;
-    --sidebar-ring: 0 84% 55%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -100,164 +53,57 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    background: radial-gradient(circle at top, rgba(45, 0, 0, 0.55), rgba(6, 6, 6, 0.95) 55%, rgba(0, 0, 0, 0.98));
-    color: #d0d0d0;
-    min-height: 100vh;
-    position: relative;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: -20%;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at center, rgba(255, 36, 36, 0.06) 0%, rgba(255, 36, 36, 0) 55%) ,
-      radial-gradient(circle at 15% 25%, rgba(255, 0, 0, 0.08), transparent 45%),
-      radial-gradient(circle at 85% 20%, rgba(255, 0, 70, 0.05), transparent 50%);
-    z-index: -1;
-  }
-
-  #root {
-    animation: console-fade-in 0.7s ease-out both;
-  }
-
-  :where(p, span, li, h1, h2, h3, h4, h5, h6, a, button, label, td, th) {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  pre,
-  code {
-    overflow-x: auto;
-    white-space: pre;
-  }
-
-  .leaflet-container {
-    z-index: 0 !important;
-  }
-
-
-  .robot-marker-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .robot-marker {
-    position: relative;
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .robot-marker-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    border: 2px solid rgba(248, 113, 113, 0.35);
-    animation: robot-marker-pulse 3s ease-in-out infinite;
-  }
-
-  .robot-marker-body {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    border-radius: 12px;
-    background: radial-gradient(circle at 30% 30%, rgba(248, 113, 113, 0.85), rgba(63, 15, 15, 0.95));
-    border: 2px solid rgba(248, 113, 113, 0.7);
-    box-shadow: 0 0 18px rgba(248, 113, 113, 0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform-origin: center center;
-    transition: transform 0.25s ease-out;
-  }
-
-  .robot-marker-pointer {
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-bottom: 8px solid rgba(248, 113, 113, 0.9);
-    filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.8));
-  }
-
-  .robot-marker-core {
-    width: 10px;
-    height: 10px;
-    border-radius: 9999px;
-    background: radial-gradient(circle, #ffffff 0%, rgba(248, 113, 113, 0.75) 70%);
-    box-shadow: 0 0 12px rgba(248, 113, 113, 0.6);
-  }
-
-  @keyframes robot-marker-pulse {
-    0%,
-    100% {
-      transform: scale(0.85);
-      opacity: 0.4;
-    }
-    40% {
-      transform: scale(1);
-      opacity: 0.9;
-    }
-  }
-
-  /* Force-hide Leaflet attribution/branding under the map */
-  .leaflet-control-attribution,
-  .leaflet-container a[href="https://leafletjs.com"] {
-    display: none !important;
-  }
-  .leaflet-bottom.leaflet-right {
-    display: none !important;
-  }
-}
-
-@keyframes console-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    @apply bg-background text-foreground antialiased selection:bg-white/10 grid-bg;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
-  .glow-panel {
-    box-shadow:
-      0 0 0 1px rgba(255, 45, 45, 0.25),
-      0 12px 32px rgba(0, 0, 0, 0.6),
-      0 0 18px rgba(255, 45, 45, 0.12);
-    backdrop-filter: blur(6px);
+
+  /* Precision Utilities */
+  .panel-base {
+    @apply bg-zinc-900/50 border border-zinc-800/50 backdrop-blur-sm;
   }
 
-  .glow-border {
-    box-shadow: inset 0 0 18px rgba(255, 64, 64, 0.12);
-    border: 1px solid rgba(255, 64, 64, 0.22);
+  .grid-bg {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   }
 
-  .text-glow-red {
-    color: #ff6d6d;
-    text-shadow: 0 0 12px rgba(255, 64, 64, 0.5);
+  .text-label {
+    @apply text-[10px] uppercase tracking-wider font-semibold text-muted-foreground;
   }
 
-  .text-soft {
-    color: #cccccc;
+  .text-value {
+    @apply font-mono font-medium tracking-tight;
   }
 
-  .indicator-dot {
-    width: 0.55rem;
-    height: 0.55rem;
-    border-radius: 9999px;
-    box-shadow: 0 0 10px currentColor;
+  /* Robot Marker */
+  .robot-marker-wrapper {
+    @apply flex items-center justify-center;
+  }
+
+  .robot-marker {
+    @apply relative flex items-center justify-center w-11 h-11;
+  }
+
+  .robot-marker-ring {
+    @apply absolute inset-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 animate-pulse;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+  }
+
+  .robot-marker-body {
+    @apply relative w-6 h-6 bg-zinc-950 rounded-full border border-emerald-500 shadow-lg flex items-center justify-center transition-transform duration-300 ease-linear;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  }
+
+  .robot-marker-pointer {
+    @apply absolute -top-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-emerald-500;
+  }
+
+  .robot-marker-core {
+    @apply w-2 h-2 bg-white rounded-full;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
   }
 }

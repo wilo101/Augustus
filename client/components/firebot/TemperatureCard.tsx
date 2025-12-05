@@ -1,58 +1,48 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Thermometer, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Props = { value: number; className?: string };
+interface TemperatureCardProps {
+  value: number;
+  className?: string;
+}
 
-export default function TemperatureCard({ value, className }: Props) {
-  const hot = value >= 65;
-  const radius = 48;
-  const circumference = 2 * Math.PI * radius;
-  const pct = Math.max(0, Math.min(100, (value / 100) * 100));
-  const dash = (pct / 100) * circumference;
+export default function TemperatureCard({ value, className }: TemperatureCardProps) {
+  const isHigh = value >= 65;
+  const pct = Math.min(Math.max((value - 20) / (80 - 20) * 100, 0), 100);
+
   return (
-    <div className={cn("flex h-full flex-col rounded-2xl border border-red-900/40 bg-[#0b1010] p-4 shadow-[0_0_22px_rgba(239,68,68,0.08)]", className)}>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-red-900/60 bg-red-900/30 text-base">
-            🌡️
-          </span>
-          <span className="text-xs font-semibold uppercase tracking-widest text-soft">Temperature</span>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-help text-[10px] uppercase tracking-widest text-gray-300/70">
-              Critical ≥ 65 °C
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Initiate cooling maneuvers or reposition immediately above 65 °C.</TooltipContent>
-        </Tooltip>
+    <div className={cn("panel-base rounded-lg p-4 flex flex-col justify-between", className)}>
+      <div className="flex items-center justify-between">
+        <span className="text-label">Core Temp</span>
+        {isHigh ? (
+          <Flame className="w-4 h-4 text-rose-500 animate-pulse" />
+        ) : (
+          <Thermometer className="w-4 h-4 text-orange-500" />
+        )}
       </div>
-      <div className="flex flex-grow items-center gap-4">
-        <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
-          <circle cx="60" cy="60" r={radius} stroke="rgba(248,113,113,0.15)" strokeWidth="12" fill="none" />
-          <circle
-            cx="60"
-            cy="60"
-            r={radius}
-            stroke={hot ? "#ef4444" : "#f87171"}
-            strokeLinecap="round"
-            strokeWidth="12"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-            fill="none"
-          />
-        </svg>
-        <div className="space-y-3 w-full">
-          <div className={`text-3xl font-extrabold ${hot ? "text-red-400" : "text-red-100"}`}>{value.toFixed(0)} °C</div>
-          <div className="relative h-2 w-full overflow-hidden rounded-full bg-black/60">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-red-500 via-red-400 to-orange-300"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="text-[11px] uppercase tracking-widest text-gray-300/80">
-            Thermal load <span className={hot ? "text-red-300" : "text-soft"}>{hot ? "High" : "Nominal"}</span>
-          </div>
+
+      <div className="space-y-1">
+        <div className="flex items-end gap-2">
+          <span className="text-3xl font-mono font-medium tracking-tighter text-foreground">
+            {value.toFixed(1)}
+            <span className="text-sm text-muted-foreground ml-1">°C</span>
+          </span>
         </div>
+
+        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div
+            className={cn(
+              "h-full transition-all duration-500 ease-out rounded-full",
+              isHigh ? "bg-rose-500" : "bg-orange-500"
+            )}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono mt-2">
+        <span>MAX: 80°C</span>
+        <span>{isHigh ? "OVERHEAT" : "OPTIMAL"}</span>
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ import TemperatureCard from "@/components/firebot/TemperatureCard";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import type { Transition } from "framer-motion";
 import SplashScreen from "@/components/SplashScreen";
 import WelcomeScreen from "@/components/WelcomeScreen";
 
@@ -17,32 +16,27 @@ const DiagnosticsPanel = lazy(() => import("@/components/firebot/DiagnosticsPane
 
 const BASE_LEVELS = { battery: 82, water: 64, pressure: 1.08, temp: 48 };
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
-const spring: Transition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] };
 
-// Skeleton fallback
+// Precision Skeleton
 const PanelSkeleton = ({ label, className }: { label: string; className?: string }) => (
   <div
     className={cn(
-      "flex items-center justify-center rounded-2xl border border-red-900/40 bg-black/40",
-      "text-[11px] font-semibold uppercase tracking-[0.35em] text-red-200/70",
+      "panel-base flex items-center justify-center rounded-lg",
+      "text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50 animate-pulse",
       className,
     )}
-    aria-label={`${label} loading`}
   >
     {label}
   </div>
 );
 
 export default function Index() {
-  // مدير المراحل: splash → welcome → app
   const [stage, setStage] = useState<"splash" | "welcome" | "app">("splash");
-
   const [battery, setBattery] = useState(82);
   const [water, setWater] = useState(64);
   const [pressure, setPressure] = useState(1.1);
   const [temp, setTemp] = useState(48);
   const [follow, setFollow] = useState(true);
-  const [mapFocusLayout, setMapFocusLayout] = useState(false);
   const lastAlertRef = useRef<{ [k: string]: number }>({});
 
   const now = () => Date.now();
@@ -55,7 +49,6 @@ export default function Index() {
     return false;
   };
 
-  // Telemetry mock
   useEffect(() => {
     if (typeof window === "undefined") return;
     const id = window.setInterval(() => {
@@ -67,158 +60,60 @@ export default function Index() {
     return () => window.clearInterval(id);
   }, []);
 
-  useEffect(() => { if (battery <= 20 && shouldNotify("battery")) toast.warning("Battery low", { description: `${battery.toFixed(0)}% remaining — plan recharge` }); }, [battery]);
-  useEffect(() => { if (water <= 15 && shouldNotify("water")) toast.error("Water level critical", { description: `${water.toFixed(0)}% — refill tank` }); }, [water]);
-  useEffect(() => { if (pressure < 0.8 && shouldNotify("pressure")) toast.warning("Pump pressure below nominal", { description: `${pressure.toFixed(2)} bar — check pump` }); }, [pressure]);
-  useEffect(() => { if (temp >= 65 && shouldNotify("temp")) toast.error("High temperature detected", { description: `${temp.toFixed(0)} °C — redirect or cooldown` }); }, [temp]);
+  useEffect(() => { if (battery <= 20 && shouldNotify("battery")) toast.warning("Battery low"); }, [battery]);
+  useEffect(() => { if (water <= 15 && shouldNotify("water")) toast.error("Water level critical"); }, [water]);
+  useEffect(() => { if (pressure < 0.8 && shouldNotify("pressure")) toast.warning("Pump pressure low"); }, [pressure]);
+  useEffect(() => { if (temp >= 65 && shouldNotify("temp")) toast.error("High temperature"); }, [temp]);
 
   const handleSplashDone = () => setStage("welcome");
   const handleWelcomeDone = () => setStage("app");
 
-  // ====== التحكم في العرض بالتتابع (مرحلة واحدة فقط مرئية) ======
   if (stage === "splash") return <SplashScreen onDone={handleSplashDone} />;
   if (stage === "welcome") return <WelcomeScreen onStart={handleWelcomeDone} />;
 
-  // ====== بعد الويلكم: الداشبورد ======
   return (
     <TooltipProvider delayDuration={150}>
-      <div className={cn("min-h-[100svh] p-4 md:p-6 lg:p-8", "bg-transparent")}>
-        <div className="mx-auto w-full max-w-[420px] sm:max-w-2xl lg:max-w-7xl px-3 sm:px-4 space-y-5 md:space-y-7">
-          <header className="flex flex-col gap-2">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] md:tracking-[0.4em] text-soft">
-                AFR System
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-300/80">
-                Augustus Firefighter Robot · Mission control, live telemetry, autonomous diagnostics
-              </p>
+      <div className="grid grid-cols-12 gap-4 h-[calc(100vh-8rem)]">
+        {/* Left Column: Camera & Map (8 cols) */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
+          {/* Camera Feed */}
+          <div className="panel-base rounded-lg overflow-hidden relative group w-full aspect-[3/1]">
+            <LiveCamera className="w-full h-full object-cover" />
+            <div className="absolute top-3 left-3 px-2 py-1 bg-black/50 backdrop-blur rounded text-[10px] font-mono text-white/80">
+              CAM-01: FRONT
             </div>
-          </header>
-
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-            <button
-              onClick={() => setMapFocusLayout((v) => !v)}
-              className="rounded border border-red-900/40 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-red-100 transition hover:bg-red-900/30 sm:text-xs sm:py-1.5"
-            >
-              {mapFocusLayout ? "Default Layout" : "Map Focus Layout"}
-            </button>
           </div>
 
-          <AnimatePresence mode="wait" initial={false}>
-            {mapFocusLayout ? (
-              <motion.section
-                key="map-focus"
-                className="grid gap-4 md:gap-6"
-                initial={{ opacity: 0, y: 32 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                transition={spring}
-              >
-                <motion.div
-                  layout
-                  className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] items-stretch"
-                  transition={spring}
-                >
-                  <motion.div layout className="h-full min-w-0" transition={spring}>
-                    <div className="h-full min-h-[220px] sm:min-h-[320px]">
-                      <LiveCamera className="h-full" />
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    layout
-                    className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-rows-2 min-w-0"
-                    transition={spring}
-                  >
-                    <motion.div layout transition={spring}>
-                      <BatteryGauge value={battery} className="h-full min-h-[150px] sm:min-h-[180px]" />
-                    </motion.div>
-                    <motion.div layout transition={spring}>
-                      <TemperatureCard value={temp} className="h-full min-h-[150px] sm:min-h-[180px]" />
-                    </motion.div>
-                    <motion.div layout transition={spring}>
-                      <WaterGauge value={water} className="h-full min-h-[150px] sm:min-h-[180px]" />
-                    </motion.div>
-                    <motion.div layout transition={spring}>
-                      <PumpPressure value={pressure} className="h-full min-h-[150px] sm:min-h-[180px]" />
-                    </motion.div>
-                  </motion.div>
-                </motion.div>
+          {/* Map Panel */}
+          <div className="panel-base rounded-lg overflow-hidden relative w-full aspect-[2/1]">
+            <Suspense fallback={<PanelSkeleton label="Initializing Map System..." className="w-full h-full" />}>
+              <MapPanel follow={follow} onFollowChange={setFollow} heightClass="h-full" />
+            </Suspense>
+          </div>
+        </div>
 
-                <motion.div layout transition={spring}>
-                  <Suspense
-                    fallback={
-                      <div className="h-[300px] sm:h-[420px] md:h-[560px]">
-                        <PanelSkeleton label="Loading Map" className="h-full" />
-                      </div>
-                    }
-                  >
-                    <MapPanel follow={follow} onFollowChange={setFollow} heightClass="h-[300px] sm:h-[420px] md:h-[560px]" />
-                  </Suspense>
-                </motion.div>
+        {/* Right Column: Telemetry & Diagnostics (4 cols) */}
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
+          {/* Telemetry Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <BatteryGauge value={battery} />
+            <WaterGauge value={water} />
+            <PumpPressure value={pressure} />
+            <TemperatureCard value={temp} />
+          </div>
 
-                <motion.div layout transition={spring}>
-                  <Suspense fallback={<PanelSkeleton label="Diagnostics" className="h-[240px]" />}>
-                    <DiagnosticsPanel />
-                  </Suspense>
-                </motion.div>
-              </motion.section>
-            ) : (
-              <motion.section
-                key="default"
-                className="grid gap-4 md:gap-6 xl:grid-cols-3"
-                initial={{ opacity: 0, y: 32 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                transition={spring}
-              >
-                <motion.div layout className="xl:col-span-2 flex flex-col gap-4 md:gap-6 min-w-0" transition={spring}>
-                  <motion.div layout transition={spring}>
-                    <LiveCamera />
-                  </motion.div>
-
-                  <motion.div
-                    layout
-                    className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:gap-6"
-                    transition={spring}
-                  >
-                    <motion.div layout className="grid gap-4 md:gap-5 min-w-0" transition={spring}>
-                      <motion.div layout transition={spring}>
-                        <BatteryGauge value={battery} />
-                      </motion.div>
-                      <motion.div layout transition={spring}>
-                        <TemperatureCard value={temp} />
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.div layout className="grid gap-4 md:gap-5 min-w-0" transition={spring}>
-                      <motion.div layout transition={spring}>
-                        <WaterGauge value={water} />
-                      </motion.div>
-                      <motion.div layout transition={spring}>
-                        <PumpPressure value={pressure} />
-                      </motion.div>
-                    </motion.div>
-                  </motion.div>
-                </motion.div>
-
-                <motion.div layout className="space-y-4 md:space-y-6 min-w-0" transition={spring}>
-                  <motion.div layout transition={spring}>
-                    <Suspense
-                      fallback={<PanelSkeleton label="Loading Map" className="h-[300px]" />}
-                    >
-                      <MapPanel follow={follow} onFollowChange={setFollow} />
-                    </Suspense>
-                  </motion.div>
-
-                  <motion.div layout transition={spring}>
-                    <Suspense fallback={<PanelSkeleton label="Diagnostics" className="h-[220px]" />}>
-                      <DiagnosticsPanel />
-                    </Suspense>
-                  </motion.div>
-                </motion.div>
-              </motion.section>
-            )}
-          </AnimatePresence>
+          {/* Diagnostics Panel */}
+          <div className="panel-base rounded-lg overflow-hidden flex flex-col">
+            <div className="p-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
+              <span className="text-label">System Diagnostics</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Suspense fallback={<PanelSkeleton label="Loading Diagnostics..." className="w-full h-full" />}>
+                <DiagnosticsPanel />
+              </Suspense>
+            </div>
+          </div>
         </div>
       </div>
     </TooltipProvider>

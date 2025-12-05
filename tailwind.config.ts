@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/**/*.{ts,tsx}"],
+  content: ["./client/**/*.{ts,tsx}", "./shared/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
     container: {
@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -46,6 +50,23 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Semantic Colors for Dashboard
+        success: {
+          DEFAULT: "#10b981", // Emerald 500
+          foreground: "#ffffff",
+        },
+        warning: {
+          DEFAULT: "#f59e0b", // Amber 500
+          foreground: "#ffffff",
+        },
+        danger: {
+          DEFAULT: "#ef4444", // Red 500
+          foreground: "#ffffff",
+        },
+        info: {
+          DEFAULT: "#3b82f6", // Blue 500
+          foreground: "#ffffff",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -87,5 +108,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

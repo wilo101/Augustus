@@ -1,64 +1,67 @@
-import { ReactNode, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import SplashScreen from "./SplashScreen";
-import afrLogo from "@/assets/afr-logo.png"; // ← استيراد اللوجو
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { Activity, Map, Settings, LayoutGrid } from "lucide-react";
 
-export default function Layout({ children }: { children: ReactNode }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const [mounted, setMounted] = useState(false);
-  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem("theme");
-    const root = document.documentElement;
-    if (!stored) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else if (stored === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-    setShowSplash(true);
-    const t = window.setTimeout(() => {
-      setShowSplash(false);
-    }, 1200);
-    return () => window.clearTimeout(t);
-  }, [mounted]);
+  const navItems = [
+    { icon: LayoutGrid, label: "Dashboard", href: "/" },
+    { icon: Map, label: "Map", href: "/map" },
+    { icon: Activity, label: "Diagnostics", href: "/diagnostics" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* 🔻 Navbar */}
-      <nav className="sticky top-0 z-40 border-b border-red-900/20 bg-gradient-to-r from-[#090303] via-[#100404] to-[#090303] shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:h-16 md:flex-nowrap md:gap-6 md:px-6 lg:px-8">
-          {/* 🔻 Logo + Title */}
-          <Link to="/" className="inline-flex items-center gap-4">
-            <img
-              src={afrLogo}
-              alt="Augustus Logo"
-              className="h-14 w-14 object-contain drop-shadow-[0_0_10px_rgba(239,68,68,0.7)]"
-            />
-            <span className="text-2xl md:text-3xl font-black tracking-[0.25em] uppercase text-red-500">
-              Augustus
-            </span>
-          </Link>
+    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary/20">
+      {/* Precision Top Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b bg-background/80 backdrop-blur-md flex items-center px-6 justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 bg-primary rounded-sm flex items-center justify-center">
+            <div className="w-3 h-3 bg-background rounded-full" />
+          </div>
+          <span className="font-bold tracking-tight text-sm">AUGUSTUS <span className="text-muted-foreground font-normal">OS</span></span>
         </div>
-      </nav>
 
-      {/* 🔻 Main Content */}
-      <main className="pb-10">{mounted && children}</main>
+        <nav className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-lg border border-white/10">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
+                  isActive
+                    ? "bg-zinc-800 text-white shadow-sm border border-white/10"
+                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                )}
+              >
+                <item.icon className={cn("w-3.5 h-3.5", isActive && "text-emerald-500")} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-      {/* 🔻 Footer */}
-      <footer className="border-t border-red-900/20 py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Augustus — FireBot Command Console
-      </footer>
+        <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>SYSTEM ONLINE</span>
+          </div>
+          <span>v2.4.0</span>
+        </div>
+      </header>
 
-      {/* 🔻 Splash Screen */}
-      {showSplash && <SplashScreen onDone={() => {}} />}
+      <main className="pt-20 pb-10 px-6 mx-auto max-w-[1600px]">
+        {mounted && children}
+      </main>
     </div>
   );
 }

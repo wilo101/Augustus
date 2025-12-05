@@ -1,33 +1,56 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, useMap, Tooltip as LeafletTooltip } from "react-leaflet";
 import L from "leaflet";
-import marker2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import markerUrl from "leaflet/dist/images/marker-icon.png";
-import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Crosshair, Navigation, Locate, Map as MapIcon, RefreshCw, Smartphone, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-type Props = { follow: boolean; onFollowChange: (v: boolean) => void; heightClass?: string };
+// Fix Leaflet icons
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-export default function MapPanel({ follow, onFollowChange, heightClass }: Props) {
-  const DEFAULT_GPS_URL = "/api/gps/stream";
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
-  // Fix default marker icons for bundlers
-  useMemo(() => {
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: marker2xUrl,
-      iconUrl: markerUrl,
-      shadowUrl: markerShadowUrl,
-    });
-  }, []);
+const DEFAULT_GPS_URL = "http://192.168.4.1:8080/gps/stream";
 
-  const defaultLatLng = useMemo(() => ({ lat: 30.0444, lng: 31.2357 }), []); // Cairo as default
-  const [center, setCenter] = useState<{ lat: number; lng: number }>(defaultLatLng);
-  const [pos, setPos] = useState<{ lat: number; lng: number }>(defaultLatLng);
-  const [gpsActive, setGpsActive] = useState(false);
+function MapController({ center, follow }: { center: { lat: number; lng: number }; follow: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (follow) {
+      map.flyTo([center.lat, center.lng], map.getZoom(), { animate: true, duration: 1.5 });
+    }
+  }, [center, follow, map]);
+  return null;
+}
+
+function RecenterOnChange({ center }: { center: { lat: number; lng: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([center.lat, center.lng], map.getZoom(), { animate: true, duration: 0.8 });
+  }, [center, map]);
+  return null;
+}
+
+interface MapPanelProps {
+  follow: boolean;
+  onFollowChange: (v: boolean) => void;
+  heightClass?: string;
+}
+
+export default function MapPanel({ follow, onFollowChange, heightClass = "h-[400px]" }: MapPanelProps) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [pos, setPos] = useState<{ lat: number; lng: number }>({ lat: 30.0444, lng: 31.2357 }); // Cairo
+  const [center, setCenter] = useState<{ lat: number; lng: number }>({ lat: 30.0444, lng: 31.2357 });
+  const [gpsActive, setGpsActive] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
   const [heading, setHeading] = useState<number | null>(null);
@@ -47,7 +70,7 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("augustus-gps-url", gpsNetworkUrl.trim() || DEFAULT_GPS_URL);
-  }, [gpsNetworkUrl, DEFAULT_GPS_URL]);
+  }, [gpsNetworkUrl]);
 
   const robotIcon = useMemo(
     () =>
@@ -88,8 +111,8 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
       navigator.permissions?.query({ name: "geolocation" as PermissionName }).then((p: any) => {
         setPermission(p.state ?? "unknown");
         p.onchange = () => setPermission(p.state ?? "unknown");
-      }).catch(() => {});
-    } catch {}
+      }).catch(() => { });
+    } catch { }
 
     const startWatch = () => {
       if (watchRef.current !== null) {
@@ -158,13 +181,13 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
           setPos(ll);
           if (follow) setCenter(ll);
         }
-      } catch {}
+      } catch { }
     };
     es.onerror = () => {
       // keep UI indicating remote disabled on error
     };
     return () => es.close();
-  }, [usePhoneGps, follow, gpsNetworkUrl, DEFAULT_GPS_URL]);
+  }, [usePhoneGps, follow, gpsNetworkUrl]);
 
   async function requestPreciseFix() {
     if (!("geolocation" in navigator) || !localGpsEnabled) return;
@@ -192,8 +215,8 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
         watchRef.current = null;
       }
       watchRef.current = navigator.geolocation.watchPosition(
-        () => {},
-        () => {},
+        () => { },
+        () => { },
         { enableHighAccuracy: true, maximumAge: 1_000, timeout: 15_000 },
       );
     } catch (e: any) {
@@ -215,7 +238,7 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
           const data = await res.json();
           setAddress(data?.displayName || "");
         }
-      } catch {}
+      } catch { }
     }, 600);
     return () => {
       if (revTimerRef.current) {
@@ -250,92 +273,98 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
     return () => clearInterval(id);
   }, [follow, gpsActive]);
 
-  function RecenterOnChange({ center: c }: { center: { lat: number; lng: number } }) {
-    const map = useMap();
-    useEffect(() => {
-      map.flyTo([c.lat, c.lng], map.getZoom(), { animate: true, duration: 0.8 });
-    }, [c.lat, c.lng, map]);
-    return null;
-  }
-
   return (
-    <div className="relative rounded-2xl border border-red-900/40 bg-[#0b1010] shadow-[0_0_24px_rgba(239,68,68,0.08)]">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-red-900/40 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-semibold uppercase tracking-widest text-soft">Map Tracking</div>
-          <div className={`indicator-dot ${gpsActive ? "bg-emerald-400" : "bg-red-500"}`} aria-hidden />
-          <span className="text-xs uppercase tracking-widest text-gray-300/80">
-            {gpsActive && coords ? "GPS Link Stable" : "Awaiting Fix"}
-          </span>
+    <div className={cn("panel-base relative flex flex-col rounded-lg overflow-hidden", heightClass)}>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-4 bg-zinc-900/80 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-xl border transition-colors duration-500",
+            gpsActive ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-rose-500/10 border-rose-500/20 text-rose-500"
+          )}>
+            <MapIcon className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Global Positioning System</span>
+            <div className="flex items-center gap-2.5">
+              <div className={cn("h-2.5 w-2.5 rounded-full shadow-[0_0_10px_currentColor]", gpsActive ? "bg-emerald-500 text-emerald-500 animate-pulse" : "bg-rose-500 text-rose-500")} />
+              <span className={cn("text-lg font-black uppercase tracking-widest", gpsActive ? "text-white" : "text-rose-500")}>
+                {gpsActive && coords ? "TARGET LOCKED" : "SEARCHING..."}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300/70">
-          <div className="flex items-center gap-2">
-            <Switch checked={localGpsEnabled} onCheckedChange={setLocalGpsEnabled} aria-label="Toggle onboard GPS" />
-            <span className="uppercase tracking-[0.25em] text-soft">GPS</span>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded bg-black/40 px-2 py-1">
+            <Switch checked={localGpsEnabled} onCheckedChange={setLocalGpsEnabled} className="scale-75 data-[state=checked]:bg-emerald-600" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Onboard</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={usePhoneGps} onCheckedChange={setUsePhoneGps} aria-label="Toggle phone GPS stream" />
-            <span className="uppercase tracking-[0.25em] text-soft">Phone GPS</span>
+
+          <div className="flex items-center gap-2 rounded bg-black/40 px-2 py-1">
+            <Switch checked={usePhoneGps} onCheckedChange={setUsePhoneGps} className="scale-75 data-[state=checked]:bg-emerald-600" />
+            <Smartphone className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Remote</span>
           </div>
+
+          <div className="h-4 w-px bg-white/10" />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={() => onFollowChange(!follow)}
-                className={`rounded border px-3 py-1.5 uppercase tracking-[0.25em] transition ${
-                  follow ? "border-red-500/70 bg-red-700/30 text-red-100" : "border-red-900/40 bg-black/60 text-red-100"
-                }`}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded transition-all",
+                  follow ? "bg-primary/20 text-primary ring-1 ring-primary/50" : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
+                )}
               >
-                {follow ? "Following" : "Follow"}
+                <Crosshair className={cn("h-4 w-4", follow && "animate-spin-slow")} />
               </button>
             </TooltipTrigger>
-            <TooltipContent>Automatically pan with robot motion</TooltipContent>
+            <TooltipContent>Toggle Auto-Follow</TooltipContent>
           </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={() => setMapRefreshKey((k) => k + 1)}
-                className="rounded border border-red-900/40 bg-black/60 px-3 py-1.5 uppercase tracking-[0.25em] text-red-100 transition hover:bg-red-900/30"
+                className="flex h-8 w-8 items-center justify-center rounded bg-white/5 text-muted-foreground transition-all hover:bg-white/10 hover:text-white"
               >
-                Refresh Tiles
+                <RefreshCw className="h-4 w-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>Reload map tiles and reposition view.</TooltipContent>
+            <TooltipContent>Refresh Map Tiles</TooltipContent>
           </Tooltip>
+
           {!gpsActive && localGpsEnabled && (
             <button
               onClick={requestPreciseFix}
-              className="rounded border border-emerald-500/40 bg-emerald-900/20 px-3 py-1.5 uppercase tracking-[0.25em] text-emerald-100 transition hover:bg-emerald-900/30"
+              className="flex items-center gap-2 rounded bg-emerald-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-500 ring-1 ring-emerald-500/20 transition-all hover:bg-emerald-500/20"
             >
-              Boost Fix
+              <Zap className="h-3 w-3" />
+              Boost
             </button>
           )}
         </div>
       </div>
-      <div className="border-b border-red-900/40 px-4 pb-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className="text-[10px] uppercase tracking-[0.32em] text-red-200/70 sm:w-40">
-            GPS Network URL
-          </label>
-          <div className="flex w-full gap-2">
-            <input
-              value={gpsNetworkUrl}
-              onChange={(event) => setGpsNetworkUrl(event.target.value)}
-              spellCheck={false}
-              className="min-w-0 flex-1 rounded-lg border border-red-900/40 bg-black/40 px-3 py-2 text-[10px] uppercase tracking-[0.25em] text-red-100 outline-none transition focus:border-red-500 focus:ring-1 focus:ring-red-500"
-              placeholder="http://192.168.x.x:3000/api/gps/stream"
-            />
-            <button
-              type="button"
-              onClick={() => setGpsNetworkUrl(DEFAULT_GPS_URL)}
-              className="rounded-lg border border-red-900/40 bg-black/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-red-100 transition hover:bg-red-900/30"
-            >
-              Reset
-            </button>
-          </div>
+
+      {/* Network Config */}
+      <div className="border-b border-white/5 bg-black/20 px-4 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stream Source</span>
+          <input
+            value={gpsNetworkUrl}
+            onChange={(event) => setGpsNetworkUrl(event.target.value)}
+            spellCheck={false}
+            className="flex-1 bg-transparent text-[10px] font-mono text-white outline-none placeholder:text-muted-foreground/50"
+            placeholder="http://..."
+          />
         </div>
       </div>
-      <div className="p-3">
-        <div className={`${heightClass ?? "h-[320px]"} w-full overflow-hidden rounded-xl border border-red-900/40`}>
+
+      {/* Map View */}
+      <div className="relative flex-1 p-1">
+        <div className="w-full h-full overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
           <MapContainer
             key={mapRefreshKey}
             {...({
@@ -348,45 +377,66 @@ export default function MapPanel({ follow, onFollowChange, heightClass }: Props)
               animate: true,
             } as any)}
           >
+            {/* 
+              LOCKED: Esri World Imagery (Satellite) 
+              This layer is permanently active to ensure visual consistency.
+              No conditional logic or fallbacks allowed.
+            */}
             <TileLayer
-              {...({
-                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-              } as any)}
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+              opacity={1.0}
             />
             <Marker {...({ position: [pos.lat, pos.lng], icon: robotIcon } as any)}>
-              <LeafletTooltip>
-                <div className="space-y-1">
-                  <div className="text-xs font-semibold text-red-800">AFR Position</div>
-                  <div className="text-[11px] text-red-900/80">
+              <Popup className="custom-popup">
+                <div className="space-y-1 bg-black/90 p-2 text-xs backdrop-blur-md border border-white/10 rounded">
+                  <div className="font-bold text-primary uppercase tracking-wider">AFR Unit 01</div>
+                  <div className="font-mono text-white/80">
                     {pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}
                   </div>
                 </div>
-              </LeafletTooltip>
+              </Popup>
             </Marker>
             <RecenterOnChange center={center} />
+            <MapController center={center} follow={follow} />
           </MapContainer>
+
+          {/* Map Overlay UI */}
+          <div className="absolute bottom-2 left-2 z-[400] flex flex-col gap-1">
+            <div className="rounded bg-black/80 px-2 py-1 font-mono text-[10px] text-white backdrop-blur-md border border-white/10">
+              LAT: {coords ? coords.lat.toFixed(6) : "---.------"}
+            </div>
+            <div className="rounded bg-black/80 px-2 py-1 font-mono text-[10px] text-white backdrop-blur-md border border-white/10">
+              LNG: {coords ? coords.lng.toFixed(6) : "---.------"}
+            </div>
+          </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] uppercase tracking-widest text-gray-300/80 md:grid-cols-4">
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Lat <span className="text-soft">{coords ? coords.lat.toFixed(6) : "-"}</span>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="grid grid-cols-2 gap-px bg-white/5 md:grid-cols-4">
+        <div className="bg-black/40 p-3 backdrop-blur-sm">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Precision</div>
+          <div className="mt-1 font-mono text-xs text-white">
+            {accuracy ? `±${Math.round(accuracy)}m` : "N/A"}
           </div>
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Lng <span className="text-soft">{coords ? coords.lng.toFixed(6) : "-"}</span>
+        </div>
+        <div className="bg-black/40 p-3 backdrop-blur-sm">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Velocity</div>
+          <div className="mt-1 font-mono text-xs text-white">
+            {typeof speed === "number" ? `${(speed || 0).toFixed(1)} m/s` : "0.0 m/s"}
           </div>
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Accuracy <span className="text-soft">{accuracy ? `${Math.round(accuracy)} m` : "-"}</span>
+        </div>
+        <div className="bg-black/40 p-3 backdrop-blur-sm">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Heading</div>
+          <div className="mt-1 font-mono text-xs text-white">
+            {typeof heading === "number" ? `${Math.round(heading)}°` : "---"}
           </div>
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Speed <span className="text-soft">{typeof speed === "number" ? `${(speed || 0).toFixed(1)} m/s` : "-"}</span>
-          </div>
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Heading <span className="text-soft">{typeof heading === "number" ? `${Math.round(heading)}°` : "-"}</span>
-          </div>
-          <div className="rounded border border-red-900/30 bg-black/40 px-3 py-2">
-            Permission <span className="text-soft">{permission}</span>
-          </div>
-          <div className="col-span-2 rounded border border-red-900/30 bg-black/40 px-3 py-2 md:col-span-4">
-            Address <span className="text-soft">{address || "-"}</span>
+        </div>
+        <div className="bg-black/40 p-3 backdrop-blur-sm">
+          <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Location</div>
+          <div className="mt-1 truncate font-mono text-xs text-white" title={address}>
+            {address || "Unknown Sector"}
           </div>
         </div>
       </div>
